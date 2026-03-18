@@ -175,10 +175,10 @@ def get_power(key, hours, interval="5m"):
 
 @st.cache_data(ttl=300, show_spinner=False)
 def get_energy(key, hours):
-    """Energía MWh por región."""
+    """Energía MWh por región. Mínimo 24h para interval=1h."""
     raw = _get(key, "/data/network/NEM", {
         "metrics": "energy", "interval": "1h",
-        "date_start": _dt(datetime.now(AEST) - timedelta(hours=hours)),
+        "date_start": _dt(datetime.now(AEST) - timedelta(hours=max(hours, 24))),
         "primary_grouping": "network_region",
     }, "energy")
     df = _parse(raw)
@@ -189,10 +189,10 @@ def get_energy(key, hours):
 
 @st.cache_data(ttl=300, show_spinner=False)
 def get_emissions(key, hours):
-    """Emisiones tCO2 por región."""
+    """Emisiones tCO2 por región. Mínimo 24h para interval=1h."""
     raw = _get(key, "/data/network/NEM", {
         "metrics": "emissions", "interval": "1h",
-        "date_start": _dt(datetime.now(AEST) - timedelta(hours=hours)),
+        "date_start": _dt(datetime.now(AEST) - timedelta(hours=max(hours, 24))),
         "primary_grouping": "network_region",
     }, "emissions")
     df = _parse(raw)
