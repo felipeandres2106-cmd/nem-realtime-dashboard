@@ -383,15 +383,15 @@ def region_card(region, price, prev, mv):
 def render_nem_dashboard():
     inject_css()
 
-try:
-    _secret = st.secrets.get("OPENELECTRICITY_API_KEY", None)
-except:
-    _secret = None
+    try:
+        _secret = st.secrets.get("OPENELECTRICITY_API_KEY", None)
+    except Exception:
+        _secret = None
 
-api_key = (st.session_state.get("oe_key")
-           or _secret
-           or os.environ.get("OPENELECTRICITY_API_KEY")
-           or os.environ.get("OE_API_KEY"))
+    api_key = (st.session_state.get("oe_key")
+               or _secret
+               or os.environ.get("OPENELECTRICITY_API_KEY")
+               or os.environ.get("OE_API_KEY"))
 
     if not api_key:
         st.markdown(f"""
