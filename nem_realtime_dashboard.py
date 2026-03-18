@@ -146,7 +146,7 @@ def _parse(raw) -> pd.DataFrame:
 # ── Fetch ──────────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=300, show_spinner=False)
 def get_market_value(key, hours):
-    """market_value $/intervalo por región — proxy del precio spot."""
+    """market_value $/interval per region — spot price proxy."""
     raw = _get(key, "/data/network/NEM", {
         "metrics": "market_value", "interval": "5m",
         "date_start": _dt(datetime.now(AEST) - timedelta(hours=hours)),
@@ -160,7 +160,7 @@ def get_market_value(key, hours):
 
 @st.cache_data(ttl=300, show_spinner=False)
 def get_power(key, hours, interval="5m"):
-    """Generación MW por región y fueltech."""
+    """Generation MW per region and fueltech."""
     raw = _get(key, "/data/network/NEM", {
         "metrics": "power", "interval": interval,
         "date_start": _dt(datetime.now(AEST) - timedelta(hours=hours)),
@@ -175,7 +175,7 @@ def get_power(key, hours, interval="5m"):
 
 @st.cache_data(ttl=300, show_spinner=False)
 def get_energy(key, hours):
-    """Energía MWh por región. Mínimo 24h para interval=1h."""
+    """Energía MWh por región. Minimum 24h para interval=1h."""
     raw = _get(key, "/data/network/NEM", {
         "metrics": "energy", "interval": "1h",
         "date_start": _dt(datetime.now(AEST) - timedelta(hours=max(hours, 24))),
@@ -189,7 +189,7 @@ def get_energy(key, hours):
 
 @st.cache_data(ttl=300, show_spinner=False)
 def get_emissions(key, hours):
-    """Emisiones tCO2 por región. Mínimo 24h para interval=1h."""
+    """Emisiones tCO2 por región. Minimum 24h para interval=1h."""
     raw = _get(key, "/data/network/NEM", {
         "metrics": "emissions", "interval": "1h",
         "date_start": _dt(datetime.now(AEST) - timedelta(hours=max(hours, 24))),
@@ -218,7 +218,7 @@ def implied_price(df_mv: pd.DataFrame, df_pw: pd.DataFrame) -> pd.DataFrame:
     return merged[["ts","region","price"]].sort_values(["region","ts"])
 
 
-# ── Régimen por precio implícito ───────────────────────────────────────────────
+# ── Regime por precio implícito ───────────────────────────────────────────────
 def regime(price):
     if price >= 300:   return "SPIKE",    "b-spike"
     elif price >= 100: return "HIGH",     "b-high"
@@ -348,7 +348,7 @@ def chart_pv_vs_price(df_price, df_pw, region):
 
 
 def chart_mv_multiregion(df_mv):
-    """Market value por región — alternativa al precio."""
+    """Market value per region — price alternative."""
     fig = go.Figure()
     for r in REGIONS:
         s = df_mv[df_mv["region"]==r].sort_values("ts")
@@ -397,19 +397,19 @@ def render_nem_dashboard():
         st.markdown(f"""
         <div style="max-width:560px;margin:3rem auto;font-family:'IBM Plex Mono',monospace;">
         <div style="font-size:1.7rem;color:{PALETTE['accent']};margin-bottom:.5rem;">⚡ NEM Real-Time Monitor</div>
-        <div style="color:{PALETTE['muted']};font-size:.82rem;">Ingresá tu API key de Open Electricity.</div>
+        <div style="color:{PALETTE['muted']};font-size:.82rem;">Enter your Open Electricity API key.</div>
         </div>""", unsafe_allow_html=True)
-        st.info("**Obtener API key gratis:** https://platform.openelectricity.org.au")
+        st.info("**Get your free API key:** https://platform.openelectricity.org.au")
         c1,c2 = st.columns([3,1])
         with c1: k = st.text_input("API Key",type="password",placeholder="oe_xxxxxxxx")
         with c2:
             st.markdown("<br>",unsafe_allow_html=True)
-            if st.button("Conectar →",use_container_width=True) and k:
+            if st.button("Connect →",use_container_width=True) and k:
                 r = requests.get(f"{API_BASE}/me",headers=_hdr(k),timeout=10)
                 if r.status_code==200:
                     st.session_state["oe_key"]=k; st.rerun()
                 else:
-                    st.error(f"❌ Key inválida ({r.status_code})")
+                    st.error(f"❌ Invalid key ({r.status_code})")
         return
 
     # Header
@@ -423,8 +423,8 @@ def render_nem_dashboard():
 
     # Controles
     c1,c2,c3,c4 = st.columns([2,2,1,1])
-    with c1: region = st.selectbox("Región focal", REGIONS, index=0)
-    with c2: hours  = st.select_slider("Ventana",options=[1,6,12,24],value=6,
+    with c1: region = st.selectbox("Focus region", REGIONS, index=0)
+    with c2: hours  = st.select_slider("Time window",options=[1,6,12,24],value=6,
                                         format_func=lambda x:f"{x}h")
     with c3:
         st.markdown("<br>",unsafe_allow_html=True)
@@ -432,25 +432,25 @@ def render_nem_dashboard():
             st.cache_data.clear(); st.rerun()
     with c4:
         st.markdown("<br>",unsafe_allow_html=True)
-        if st.button("🔑 Cambiar key",use_container_width=True):
+        if st.button("🔑 Change key",use_container_width=True):
             st.session_state.pop("oe_key",None); st.rerun()
 
     # Fetch
-    with st.spinner("Cargando datos del NEM..."):
+    with st.spinner("Loading NEM data..."):
         df_mv  = get_market_value(api_key, hours)
         df_pw  = get_power(api_key, hours, interval="5m")
         df_en  = get_energy(api_key, hours)
         df_em  = get_emissions(api_key, hours)
 
     if df_mv.empty and df_pw.empty:
-        st.error("No se cargaron datos. Verificá la API key.")
+        st.error("No data loaded. Check your API key.")
         return
 
     # Precio implícito
     df_price = implied_price(df_mv, df_pw)
 
     # ── Tarjetas ──
-    st.markdown('<div class="sec">⚡ Precio Implícito · Market Value · Todas las Regiones</div>',
+    st.markdown('<div class="sec">⚡ Implied Price · Market Value · All Regions</div>',
                 unsafe_allow_html=True)
     cols = st.columns(5)
     for i, r in enumerate(REGIONS):
@@ -463,22 +463,22 @@ def render_nem_dashboard():
 
     # ── Precio multi-región ──
     if not df_price.empty:
-        st.markdown('<div class="sec">📈 Precio Implícito · Comparación Regional</div>',
+        st.markdown('<div class="sec">📈 Implied Price · Regional Comparison</div>',
                     unsafe_allow_html=True)
         st.plotly_chart(chart_multiregion(df_price),
                         use_container_width=True, config={"displayModeBar":False})
     else:
-        st.markdown('<div class="sec">📊 Market Value · Comparación Regional</div>',
+        st.markdown('<div class="sec">📊 Market Value · Regional Comparison</div>',
                     unsafe_allow_html=True)
         st.plotly_chart(chart_mv_multiregion(df_mv),
                         use_container_width=True, config={"displayModeBar":False})
 
     # ── Análisis focal ──
-    st.markdown(f'<div class="sec">🔍 Análisis Focal · {region}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sec">🔍 Focal Analysis · {region}</div>', unsafe_allow_html=True)
     cl, cr = st.columns([3,2])
     with cl:
         if not df_price.empty:
-            st.markdown("**Precio Implícito ($/MWh)**")
+            st.markdown("**Implied Price ($/MWh)**")
             st.plotly_chart(chart_price_series(df_price,region),
                             use_container_width=True,config={"displayModeBar":False})
         # Stats
@@ -489,24 +489,24 @@ def render_nem_dashboard():
             n_pts = len(sp)
             st.markdown(f"""
             <div class="card">
-            <div class="lbl">Estadísticas · {hours}h · {region}</div>
+            <div class="lbl">Statistics · {hours}h · {region}</div>
             <div style="font-family:'IBM Plex Mono';font-size:.78rem;line-height:2;margin-top:.3rem;">
-                <span style="color:{PALETTE['muted']}">Promedio</span>
+                <span style="color:{PALETTE['muted']}">Average</span>
                 <span style="color:{PALETTE['text']};float:right">${sp['price'].mean():.0f}/MWh</span><br>
-                <span style="color:{PALETTE['muted']}">Máximo</span>
+                <span style="color:{PALETTE['muted']}">Maximum</span>
                 <span style="color:{PALETTE['spike']};float:right">${sp['price'].max():.0f}/MWh</span><br>
-                <span style="color:{PALETTE['muted']}">Mínimo</span>
+                <span style="color:{PALETTE['muted']}">Minimum</span>
                 <span style="color:{PALETTE['neg']};float:right">${sp['price'].min():.0f}/MWh</span><br>
                 <span style="color:{PALETTE['muted']}">Spikes ≥300</span>
                 <span style="color:{PALETTE['spike']};float:right">{n_spk}/{n_pts} ({n_spk/n_pts*100:.1f}%)</span><br>
-                <span style="color:{PALETTE['muted']}">Negativos</span>
-                <span style="color:{PALETTE['neg']};float:right">{n_neg} intervalos</span>
+                <span style="color:{PALETTE['muted']}">Negative</span>
+                <span style="color:{PALETTE['neg']};float:right">{n_neg} intervals</span>
             </div></div>""", unsafe_allow_html=True)
 
     with cr:
         # Energy por región
         if not df_en.empty:
-            st.markdown("**Energía Generada (MWh) · Últimas horas**")
+            st.markdown("**Energy Generated (MWh) · Last hours**")
             en_r = df_en[df_en["region"]==region].sort_values("ts").tail(24)
             fig_en = go.Figure(go.Bar(x=en_r["ts"],y=en_r["mwh"],
                 marker_color=PALETTE.get(region,PALETTE["accent"]),
@@ -518,7 +518,7 @@ def render_nem_dashboard():
 
         # Emisiones
         if not df_em.empty:
-            st.markdown("**Emisiones (tCO₂eq)**")
+            st.markdown("**Emissions (tCO₂eq)**")
             em_r = df_em[df_em["region"]==region].sort_values("ts").tail(24)
             fig_em = go.Figure(go.Scatter(x=em_r["ts"],y=em_r["tco2"],mode="lines+markers",
                 line=dict(color="#F87171",width=1.5),
@@ -530,28 +530,28 @@ def render_nem_dashboard():
             st.plotly_chart(fig_em,use_container_width=True,config={"displayModeBar":False})
 
     # ── Generación ──
-    st.markdown('<div class="sec">🌱 Mix de Generación · Penetración Renovable</div>',
+    st.markdown('<div class="sec">🌱 Generation Mix · Renewable Penetration</div>',
                 unsafe_allow_html=True)
     if not df_pw.empty and "fueltech" in df_pw.columns:
         gm1,gm2,gm3 = st.columns(3)
         with gm1:
-            st.markdown(f"**Mix actual · {region}**")
+            st.markdown(f"**Current mix · {region}**")
             st.plotly_chart(chart_gen_donut(df_pw,region),
                             use_container_width=True,config={"displayModeBar":False})
         with gm2:
-            st.markdown("**Generación en el tiempo**")
+            st.markdown("**Generation over time**")
             st.plotly_chart(chart_gen_stack(df_pw,region),
                             use_container_width=True,config={"displayModeBar":False})
         with gm3:
-            st.markdown("**PV Penetration vs. Precio**")
+            st.markdown("**PV Penetration vs. Price**")
             st.plotly_chart(chart_pv_vs_price(df_price,df_pw,region),
                             use_container_width=True,config={"displayModeBar":False})
             st.markdown(f"""<div style="font-family:'IBM Plex Mono';font-size:.6rem;
                 color:{PALETTE['muted']};margin-top:-.3rem;">
-                ↘ Merit-order effect: más solar → menor precio</div>""",
+                ↘ Merit-order effect: more solar → lower price</div>""",
                 unsafe_allow_html=True)
     else:
-        st.info("Datos de generación cargando. Intentá con ventana de 6h.")
+        st.info("Generation data loading. Try a 6h window.")
 
     # ── Tabla régimen ──
     st.markdown('<div class="sec">🗂 Últimos Intervalos · {}</div>'.format(region),
@@ -562,13 +562,13 @@ def render_nem_dashboard():
         tbl = sp[["ts","price"]].copy()
         tbl["ts"]     = tbl["ts"].dt.strftime("%H:%M  %d-%b")
         tbl["regime"] = sp["price"].apply(lambda x: regime(x)[0]).values
-        tbl.columns   = ["Intervalo (AEST)","$/MWh (impl.)","Régimen"]
+        tbl.columns   = ["Interval (AEST)","$/MWh (impl.)","Regime"]
         tbl["$/MWh (impl.)"] = tbl["$/MWh (impl.)"].map("${:.0f}".format)
         rc_map = {"SPIKE":PALETTE["spike"],"HIGH":PALETTE["high"],
                   "NORMAL":PALETTE["normal"],"NEGATIVE":PALETTE["neg"]}
         styled = (tbl.style
             .applymap(lambda v: f"color:{rc_map.get(v,PALETTE['text'])};font-weight:600",
-                      subset=["Régimen"])
+                      subset=["Regime"])
             .set_properties(**{"background-color":PALETTE["card"],"color":PALETTE["text"],
                                "font-family":"IBM Plex Mono","font-size":".8rem"}))
         st.dataframe(styled,use_container_width=True,hide_index=True)
